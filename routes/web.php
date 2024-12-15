@@ -14,14 +14,9 @@ use App\Http\Controllers\PokemonController;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
-
 // ポケモン一覧ページのルート
-Route::get('/pokemons', [PokemonController::class, 'index'])->name('poke_index');
+Route::get('/', [PokemonController::class, 'index']);
 
 // ポケモン詳細ページのルート
-Route::get('/pokemons/{id}', [PokemonController::class, 'show'])->name('poke_show');
+Route::get('/show/{id}', [PokemonController::class, 'show'])->name('poke_show');
 

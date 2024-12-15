@@ -1,15 +1,14 @@
-<div id="pokemon_block">
-    <div class="wrap-inner">
-        <ul class="poke_list flexlist">
-            {{-- @foreach ($pokemons as $pokemon) --}}
-                <li class="item">
-                    No.{{ $pokemon->id }}
-                    {{ $pokemon->jp_name }}
-                    <div class="imgarea">
-                        <img src="{{ $pokemon->front_default }}" alt="">
-                    </div>
-                </li>
-            {{-- @endforeach --}}
-        </ul>
+<x-home>
+    <div>
+        <div>
+            <h1>No. {{ $pokemon['id'] }} {{ $pokemon['en_name'] }}</h1>
+            <p>
+                Type:
+                {{ isset($pokemon->type1) ? $pokemon->type1 : 'タイプ情報なし' }}
+                @if($pokemon->type2) / {{ $pokemon->type2 }}@endif
+            </p>
+            <img src="{{ $pokemon['front_default'] }}" alt="">
+        </div>
+        <div></div>
     </div>
-</div>
+</x-home>

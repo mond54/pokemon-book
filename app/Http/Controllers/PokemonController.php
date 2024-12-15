@@ -8,8 +8,7 @@ class PokemonController extends Controller
 {
     public function index()
     {
-        // すべてのポケモンを取得
-        $pokemons = Pokemon::all();
+        $pokemons = Pokemon::orderBy('id', 'asc')->get(); // Pokemonというテーブル名
 
         // ビューにデータを渡す
         return view('pokemons.index', compact('pokemons'));
@@ -17,10 +16,14 @@ class PokemonController extends Controller
 
     public function show($id)
     {
-        // 特定のポケモンを取得
-        $pokemon = Pokemon::findOrFail($id);
+        // 引数で受け取ったポケモンIDを使用してデータを取得
+        $pokemon = Pokemon::find($id);
 
-        // 詳細ビューにデータを渡す
+        // データが見つからない場合の処理
+        if (! $pokemon) {
+            return redirect()->route('poke_show')->with('error', 'ポケモンが見つかりません。');
+        }
+
         return view('pokemons.show', compact('pokemon'));
     }
 }

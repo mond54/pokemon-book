@@ -7,6 +7,7 @@ require "vendor/autoload.php";
 use Illuminate\Console\Command;
 use App\Models\Pokemon;
 use Stichoza\GoogleTranslate\GoogleTranslate;
+use App\Services\ApiService;
 
 class GetPokemonInfo extends Command
 {
@@ -15,7 +16,8 @@ class GetPokemonInfo extends Command
      *
      * @var string
      */
-    protected $signature = 'command:getpokemoninfo';
+    // protected $signature = 'command:getpokemoninfo';
+    protected $signature = 'command:getpokemoninfo {poke_id? : ポケモンID}';
 
     /**
      * The console command description.
@@ -41,34 +43,43 @@ class GetPokemonInfo extends Command
      */
     public function handle()
     {
-        try {
-            $p_no_array = range(1, 898);
-            foreach ($p_no_array as $no) {
-                // すでに取得済みの場合はスキップ
-                $pokemon = Pokemon::where('p_id', $no)->first();
-                if (!empty($pokemon)) {
+        // 引数を取得
+        $poke_id = $this->argument('poke_id');
+        $apiService = new ApiService;
+        $Pokemon = new Pokemon;
+
+        // 引数でポケモンのIDが指定されているかどうかで処理を分岐
+        if (!empty($poke_id)) { // $poke_idがあれば
+            $p_id = Pokemon::where('p_id', $poke_id)->first();
+
+            if (! empty($p_id)) { // 既にテーブルにデータがあれば処理を終える
+                return;
+            }
+            $result = $apiService->fetchData($poke_id);
+            $p_info = $this->getPokemonInfo($result);
+            print_r($p_info['id']);
+            print_r($p_info['jp_name']."\n");
+            print_r($p_info['en_name']."\n");
+            print_r("\n");
+            $p_info = $Pokemon->createPokemon($p_info);
+        } else {
+            $pokeid_min = 1;
+            $pokeid_max = 898;
+            for ($i = $pokeid_min; $i <= $pokeid_max; $i++) {
+                $p_id = Pokemon::where('p_id', $i)->first();
+                if (! empty($p_id)) {
+                    // 次の処理移動
                     continue;
                 }
-                // ポケモンごとの情報をcurlで取得
-                $url = 'https://pokeapi.co/api/v2/pokemon/'.$no;
-                $curl = curl_init($url);
-                curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'GET');
-                curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-                curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-                $r = curl_exec($curl);
-                $data = json_decode($r, true);
-                $p_info = self::getPokemonInfo($data);
+                $result = $apiService->fetchData($i);
+                $p_info = $this->getPokemonInfo($result);
                 print_r($p_info['id']);
                 print_r($p_info['jp_name']."\n");
                 print_r($p_info['en_name']."\n");
                 print_r("\n");
-                $p_info = Pokemon::createPokemon($p_info);
-                sleep(1);
+                $p_info = $Pokemon->createPokemon($p_info);
+                sleep(1); // 不正なアクセスの検知を防ぐために、処理を一時停止する
             }
-            curl_close($curl);
-
-        } catch(Exception $e) {
-            echo $e->getMessage();
         }
     }
 
@@ -91,7 +102,7 @@ class GetPokemonInfo extends Command
         $st->setTarget($to);   // 翻訳先言語
 
         // 翻訳実行
-        $p_info['jp_name'] = $st->translate($p_info['en_name']);
+        $p_info['jp_name'] = $p_info['en_name'];
 
         $p_info['type1'] = $d['types'][0]['type']['name'];
         if (isset($d['types'][1])) {
